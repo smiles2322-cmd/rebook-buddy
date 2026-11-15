@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1420">
+<meta name="description" content="Rebook Buddy by Smiles 2322 helps you through a cancelled flight: track the rebooking line, work a rescue checklist, call the airline with ready scripts, and tell your people.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rebook Buddy">
+<title>Rebook Buddy</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="brand">
+    <img src="icons/icon.svg" alt="" width="32" height="32">
+    <div>
+      <p class="brand-name">Rebook Buddy</p>
+      <p class="brand-sub">by Smiles 2322</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="demo-badge" id="demoBadge" title="All flights, airlines and phone numbers are example data">Demo data</span>
+    <button class="icon-btn" id="btnTour" aria-label="Show the tour"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm1.6-6.2l-.9.9c-.7.7-1.2 1.3-1.2 2.8h-2v-.5c0-1.1.4-2.1 1.2-2.8l1.2-1.3c.4-.4.6-.9.6-1.4a2 2 0 00-4 0H7.5a4.5 4.5 0 019 0c0 .9-.4 1.7-.9 2.3z"/></svg></button>
+    <button class="icon-btn" id="btnSettings" aria-label="Settings"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 000-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 00-1.7-1L15 3h-4l-.4 2.7a7.6 7.6 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 000 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z" transform="translate(-1 0)"/></svg></button>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <!-- SETUP -->
+  <section class="view" id="view-setup" aria-labelledby="setupTitle">
+    <h1 id="setupTitle">Your flight</h1>
+    <p class="lede">Enter your flight, or load the example. When the airline cancels, tap the big red button and I will walk you through everything.</p>
+    <div class="notice" role="note"><strong>Demo mode.</strong> Airlines, flights, times and phone numbers in this version are made-up examples. Always confirm with your airline.</div>
+    <form id="flightForm" class="card form" novalidate>
+      <div class="field">
+        <label for="fAirline">Airline</label>
+        <input id="fAirline" list="airlineList" autocomplete="off" placeholder="Harborline Air">
+        <datalist id="airlineList"></datalist>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="fNumber">Flight number</label><input id="fNumber" autocomplete="off" placeholder="HL 482" maxlength="10"></div>
+        <div class="field"><label for="fDate">Date</label><input id="fDate" type="date"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="fFrom">From (airport code)</label><input id="fFrom" list="airportList" autocomplete="off" placeholder="ORD" maxlength="40"></div>
+        <div class="field"><label for="fTo">To (airport code)</label><input id="fTo" list="airportList" autocomplete="off" placeholder="SEA" maxlength="40"></div>
+      </div>
+      <datalist id="airportList"></datalist>
+      <div class="field"><label for="fDep">Scheduled departure</label><input id="fDep" type="time"></div>
+      <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
+      <div class="btn-row">
+        <button type="button" class="btn ghost" id="btnExample">Load example flight</button>
+        <button type="submit" class="btn">Save flight</button>
+      </div>
+    </form>
+    <button class="btn danger big" id="btnCancelled">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg>
+      My flight was cancelled
+    </button>
+  </section>
+
+  <!-- LINE -->
+  <section class="view" id="view-line" aria-labelledby="lineTitle" hidden>
+    <div class="flight-strip" id="flightStrip"></div>
+    <h1 id="lineTitle" class="sr-only">Rebooking line</h1>
+    <div class="stats" id="stats">
+      <div class="tile"><p class="tile-label">People ahead</p><p class="tile-val" id="stAhead">0</p></div>
+      <div class="tile"><p class="tile-label">Estimated wait</p><p class="tile-val" id="stWait">0 min</p></div>
+      <div class="tile"><p class="tile-label">On hold with airline</p><p class="tile-val" id="stHold">0:00</p></div>
+      <div class="tile"><p class="tile-label">Checklist</p><p class="tile-val" id="stDone">0 of 5</p></div>
+    </div>
+    <div class="card line-card">
+      <div class="line-head">
+        <h2>Rebooking line</h2>
+        <span class="pill" id="paceNote">Pace: estimating</span>
+      </div>
+      <p class="line-big" id="lineBig" aria-live="polite"></p>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <p class="legend" aria-hidden="true"><span class="lg served"></span>Helped <span class="lg ahead"></span>Ahead of you <span class="lg you"></span>You <span class="lg behind"></span>Behind you</p>
+      <div class="btn-row">
+        <button class="btn" id="btnStep">Line moved (1 person helped)</button>
+        <button class="btn ghost" id="btnBack">Undo</button>
+      </div>
+      <div class="auto-row">
+        <label class="switch"><input type="checkbox" id="autoLine"><span>Move the line automatically</span></label>
+        <label for="autoSpeed" class="sr-only">Automatic speed</label>
+        <select id="autoSpeed">
+          <option value="3">Demo speed (every 3 s)</option>
+          <option value="30">Every 30 s</option>
+          <option value="55">Every 55 s (typical)</option>
+          <option value="90">Every 90 s</option>
+        </select>
+      </div>
+      <details class="adjust">
+        <summary>Set my place in line</summary>
+        <div class="row2">
+          <div class="field"><label for="setPos">My number in line</label><input id="setPos" type="number" min="1" max="999" inputmode="numeric"></div>
+          <div class="field"><label for="setTotal">People in line total</label><input id="setTotal" type="number" min="1" max="999" inputmode="numeric"></div>
+        </div>
+        <button class="btn ghost" id="btnSetPos">Update line</button>
+      </details>
+    </div>
+    <div class="card tip">
+      <h2>Do not just wait in line</h2>
+      <p>While you hold your place, call the airline at the same time and check the app. Whoever answers first wins.</p>
+      <div class="btn-row"><button class="btn ghost" data-go="call">Open call helper</button><button class="btn ghost" data-go="rescue">Open checklist</button></div>
+    </div>
+  </section>
+
+  <!-- RESCUE -->
+  <section class="view" id="view-rescue" aria-labelledby="rescueTitle" hidden>
+    <h1 id="rescueTitle">Rescue checklist</h1>
+    <div class="progress" aria-hidden="true"><div class="bar" id="progBar"></div></div>
+    <p class="lede" id="progText">0 of 5 done</p>
+    <ol class="checklist" id="checklist">
+      <li class="item" data-key="flight">
+        <div class="item-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2><button class="item-toggle" aria-expanded="false" aria-controls="p-flight" id="t-flight">Get on the next flight</button></h2>
+        </div>
+        <div class="item-body" id="p-flight" role="region" aria-labelledby="t-flight" hidden>
+          <p class="small" id="adapterNote"></p>
+          <div id="altList" class="alt-list"><p class="small">Loading options...</p></div>
+        </div>
+      </li>
+      <li class="item" data-key="hotel">
+        <div class="item-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2><button class="item-toggle" aria-expanded="false" aria-controls="p-hotel" id="t-hotel">Hotel for tonight</button></h2>
+        </div>
+        <div class="item-body" id="p-hotel" role="region" aria-labelledby="t-hotel" hidden>
+          <p>Ask the agent for a hotel voucher first. If you need to book yourself, search near the airport:</p>
+          <div class="field"><label for="hotelCity">Search near</label><input id="hotelCity" autocomplete="off"></div>
+          <div class="link-grid" id="hotelLinks"></div>
+          <p class="small">Opens public hotel sites in a new tab. Keep every receipt in case the airline reimburses you.</p>
+          <button class="btn done-btn" data-done="hotel">I have a place to sleep</button>
+        </div>
+      </li>
+      <li class="item" data-key="voucher">
+        <div class="item-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2><button class="item-toggle" aria-expanded="false" aria-controls="p-voucher" id="t-voucher">Meal and hotel vouchers, and your rights</button></h2>
+        </div>
+        <div class="item-body" id="p-voucher" role="region" aria-labelledby="t-voucher" hidden>
+          <h3>Ask for these</h3>
+          <ul class="bullets">
+            <li>A meal voucher if you will wait more than a few hours.</li>
+            <li>A hotel room and ride to it if you are stuck overnight.</li>
+            <li>A seat on the next flight, including on a partner airline.</li>
+            <li>Written confirmation (email or text) of anything they promise.</li>
+          </ul>
+          <h3>Know your rights (United States)</h3>
+          <p>Under US Department of Transportation rules, if the airline cancels your flight for any reason and you choose not to travel, you can get a refund of your ticket, even if it was non-refundable. Accepting a new flight or a travel credit usually means giving up that refund, so decide before you say yes.</p>
+          <p>Meals and hotels are not required by federal law. Many airlines promise them when the cancellation was their fault (like crew or maintenance), but not usually for weather. Rules and promises vary by airline and country, so check your airline's customer service plan.</p>
+          <p><a href="https://www.transportation.gov/individuals/aviation-consumer-protection/refunds" target="_blank" rel="noopener">US DOT: Refunds page (opens in new tab)</a></p>
+          <p class="small">This is general information, not legal advice.</p>
+          <button class="btn done-btn" data-done="voucher">I asked about vouchers</button>
+        </div>
+      </li>
+      <li class="item" data-key="notify">
+        <div class="item-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2><button class="item-toggle" aria-expanded="false" aria-controls="p-notify" id="t-notify">Tell someone</button></h2>
+        </div>
+        <div class="item-body" id="p-notify" role="region" aria-labelledby="t-notify" hidden>
+          <div class="row2">
+            <div class="field"><label for="cName">Name</label><input id="cName" autocomplete="off" placeholder="Jordan"></div>
+            <div class="field"><label for="cPhone">Mobile number (optional)</label><input id="cPhone" type="tel" autocomplete="off" placeholder="555 0100"></div>
+          </div>
+          <div class="field"><label for="cMsg">Message</label><textarea id="cMsg" rows="4"></textarea></div>
+          <div class="btn-row">
+            <button class="btn" id="btnShare">Share message</button>
+            <a class="btn ghost" id="smsLink" href="sms:">Text it</a>
+          </div>
+          <p class="small">You send it yourself. Nothing is sent by this app.</p>
+          <button class="btn done-btn" data-done="notify">Done, they know</button>
+        </div>
+      </li>
+      <li class="item" data-key="calendar">
+        <div class="item-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2><button class="item-toggle" aria-expanded="false" aria-controls="p-calendar" id="t-calendar">Calendar and alarm</button></h2>
+        </div>
+        <div class="item-body" id="p-calendar" role="region" aria-labelledby="t-calendar" hidden>
+          <p id="calSummary">Pick your new flight first, or I will use your original flight.</p>
+          <button class="btn" id="btnIcs">Download calendar event (.ics)</button>
+          <p class="small">The event includes an alert 3 hours before departure. Opens in Apple Calendar, Google Calendar or Outlook.</p>
+          <div class="row2 alarm-row">
+            <div class="field"><label for="alarmTime">Wake-up alarm</label><input id="alarmTime" type="time"></div>
+            <button class="btn ghost" id="btnAlarm">Set reminder</button>
+          </div>
+          <p class="small" id="alarmMsg" role="status" aria-live="polite">The reminder rings while this app is open. For a sure wake-up, also set your phone's own alarm.</p>
+          <button class="btn done-btn" data-done="calendar">It is on my calendar</button>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- CALL -->
+  <section class="view" id="view-call" aria-labelledby="callTitle" hidden>
+    <h1 id="callTitle">Call helper</h1>
+    <div class="card">
+      <div class="field"><label for="airPhone">Airline phone number</label><input id="airPhone" type="tel" autocomplete="off"></div>
+      <p class="small" id="phoneNote"></p>
+      <a class="btn big call" id="telLink" href="tel:">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.6 10.8a15.5 15.5 0 006.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 013 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>
+        Call the airline
+      </a>
+    </div>
+    <div class="card hold">
+      <h2>On-hold timer</h2>
+      <p class="hold-time" id="holdTime" role="timer" aria-label="Time on hold">0:00</p>
+      <div class="btn-row">
+        <button class="btn" id="btnHold">Start timer</button>
+        <button class="btn ghost" id="btnHoldReset">Reset</button>
+      </div>
+      <p class="small">Tip: use speakerphone so you can keep your place in line while you hold.</p>
+    </div>
+    <h2 class="sec-h">What to say</h2>
+    <div id="scripts" class="scripts"></div>
+  </section>
+
+  <!-- CHAT -->
+  <section class="view" id="view-chat" aria-labelledby="chatTitle" hidden>
+    <h1 id="chatTitle">Ask Buddy</h1>
+    <p class="small">Buddy is a built-in guide that follows simple rules. It does not send your words anywhere.</p>
+    <div class="chat-log" id="chatLog" role="log" aria-live="polite" aria-label="Conversation"></div>
+    <div class="chips" id="chips"></div>
+    <form class="chat-form" id="chatForm">
+      <label for="chatIn" class="sr-only">Message Buddy</label>
+      <input id="chatIn" autocomplete="off" placeholder="Ask about hotels, refunds, calling...">
+      <button class="btn" type="submit">Send</button>
+    </form>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar" aria-label="Main">
+  <button data-view="setup" aria-label="Flight"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg><span>Flight</span></button>
+  <button data-view="line"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7a2 2 0 104 0 2 2 0 00-4 0zm6 0a2 2 0 104 0 2 2 0 00-4 0zm6 0a2 2 0 104 0 2 2 0 00-4 0zM4 15a2 2 0 104 0 2 2 0 00-4 0zm6 0a2 2 0 104 0 2 2 0 00-4 0zm6 0a2 2 0 104 0 2 2 0 00-4 0z"/></svg><span>Line</span></button>
+  <button data-view="rescue"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.4-1.4z"/></svg><span>Checklist</span></button>
+  <button data-view="call"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.6 10.8a15.5 15.5 0 006.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 013 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg><span>Call</span></button>
+  <button data-view="chat"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3V4z"/></svg><span>Buddy</span></button>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="tour" aria-labelledby="tourTitle">
+  <div class="tour-art" id="tourArt" aria-hidden="true"></div>
+  <h2 id="tourTitle"></h2>
+  <p id="tourText"></p>
+  <p class="tour-step" id="tourStep"></p>
+  <div class="btn-row">
+    <button class="btn ghost" id="tourSkip">Skip</button>
+    <button class="btn" id="tourNext">Next</button>
+  </div>
+</dialog>
+
+<dialog id="settings" aria-labelledby="setTitle">
+  <h2 id="setTitle">Settings</h2>
+  <label class="switch"><input type="checkbox" id="optLarge"><span>Large text</span></label>
+  <label class="switch"><input type="checkbox" id="optMotion"><span>Reduce motion</span></label>
+  <label class="switch"><input type="checkbox" id="optVibe"><span>Vibrate when the line moves</span></label>
+  <p class="small">Rebook Buddy has no accounts, no payments and no tracking. Everything stays on this phone.</p>
+  <div class="btn-row">
+    <button class="btn ghost danger-text" id="btnReset">Start over</button>
+    <button class="btn" id="setClose">Close</button>
+  </div>
+</dialog>
+
+<script src="adapters.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
